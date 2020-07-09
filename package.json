@@ -23,6 +23,8 @@
     "mongoose-unique-validator": "^2.0.3",
     "passport": "^0.4.1",
     "passport-local": "^1.0.0",
+    "fabric-ca-client": "^2.1.0",
+    "fabric-network": "^2.1.0",
     "path": "^0.12.7",
     "shelljs": "^0.8.4"
   }
