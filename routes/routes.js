@@ -2,6 +2,7 @@ var express = require('express')
 var router = express.Router()
 var User = require('../models/user')
 var Content = require('../models/listModel')
+var queryUtil = require('../utils/Util')
 
 
 // Authentication Middleware
@@ -27,13 +28,19 @@ router.use(function(req,res,next){
     next();
   });
 // // Main Page
-router.get("/", loggedInOnly, (req, res ,done) => {
-    Content.find((err, result)=>{
+router.get("/", loggedInOnly, async (req, res ,done) => {
+
+    var userData = await queryUtil.query_all_users()
+    // console.log(userData)
+    
+    await Content.find((err, result)=>{
       if(err) {
         done(err)
       }
+      var user = JSON.parse(userData)
+      // console.log(user)
       console.log(req.user.username)
-      res.render("index", { username: req.user.username , data:result});
+      res.render("index", { username: req.user.username , data:result, user:user});
     })
     
   });
@@ -96,11 +103,11 @@ router.post("/signup",function(req,res,next){
     });
   });
 
-router.get('/content', (req, res, next)=>{
+router.get('/content', loggedInOnly , (req, res, next)=>{
   res.render('insert')
 })
   
-router.post('/content' ,function(req, res){
+router.post('/content' , loggedInOnly ,async function(req, res){
     
     var contact = new Content()
     contact.title = req.body.title
@@ -108,7 +115,13 @@ router.post('/content' ,function(req, res){
     contact.author = req.body.author
     contact.email = req.body.email
 
-    contact.save(function(err) {
+    var blogNum = req.body.blogNum
+    var title  = req.body.title
+    var desc  = req.body.description
+    var KEY = req.body.KEY
+
+    await  queryUtil.create_blog(KEY ,blogNum,title,desc  )
+    await contact.save(function(err) {
         if(err){
             res.json({
                 status:'error',
@@ -120,7 +133,23 @@ router.post('/content' ,function(req, res){
     })    
 })
 
-router.post('/delete/:id', (req ,res , next)=>{
+router.get('/createuser' ,loggedInOnly , (req, res , next)=>{
+  res.render('createuser')
+})
+
+
+router.post('/createuser' ,async (req, res , next)=>{
+      var KEY = req.body.KEY
+      var username = req.body.username
+      var email = req.body.email
+      var phone = req.body.phone
+      var words  = req.body.words
+
+      await queryUtil.create_user(KEY, username,email,phone,words )
+      res.redirect('/')
+})
+
+router.post('/delete/:id',loggedInOnly,  (req ,res , next)=>{
   var id = req.params.id
   console.log(req.params.id)
   Content.findOneAndDelete({_id:id} , (err, result)=>{
